@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from scipy.integrate import solve_ivp
 from mpl_toolkits.mplot3d import axes3d
 import random 
+import pandas as pd
 ########################Modelo atmosférico ##########################################################################
 
 def P_air(z):
@@ -102,9 +103,9 @@ def W_T(z,m_he):
 ########################## Solver ########################################################################
 t_0 = 0
 t_f = 12800
-z_e0 = 0.1
+z_e0 = 1
 m0_he = 330 # [Kg]
-t_Interval = linspace(0,t_f)
+t_Interval = linspace(0, t_f, num = 100)
 y_01 = [0,0,z_e0,0,0,0,m0_he]
 
                 ######## Modelo de Viento Atmosférico ########
@@ -116,12 +117,14 @@ M_10 = 4.7
 
 U_fricc = sqrt(C_D * M_10**2)
 
-def viento(z):
-    V_wx = random.uniform(-((U_fricc / k) * log(z/z_0)), (U_fricc / k) * log(z/z_0))
-    V_wy = random.uniform(-((U_fricc / k) * log(z/z_0)), (U_fricc / k) * log(z/z_0))
-    V_wz = random.uniform(-5, 5)
-    return [V_wx, V_wy, V_wz]
 
+#def viento(z):
+    
+#    V_wx = random.uniform(-((U_fricc / k) * log(z/z_0)), (U_fricc / k) * log(z/z_0))
+#    V_wy = random.uniform(-((U_fricc / k) * log(z/z_0)), (U_fricc / k) * log(z/z_0))
+#    V_wz = random.uniform(-5, 5)
+#    return [V_wx, V_wy, V_wz]
+    
 
 def f3D(t,y):
     
@@ -137,12 +140,22 @@ def f3D(t,y):
 
     m_he = y[6]
 ########### Valores y dirección del viento como inputs en funcion de la altura #####
-   
-    V_wind = viento(z_e) 
-
+    
     alpha = random.uniform(-pi/2, pi/2)                     #[rad]
-    phi = random.uniform(-2*pi, 2*pi)                      #[rad]
+    phi = random.uniform(-2*pi, 2*pi)                       #[rad]
+    if (random.randint(0,1) == True): 
+        V_wx = random.uniform(-((U_fricc / k) * log(z_e/z_0)), (U_fricc / k) * log(z_e/z_0))
+        V_wy = random.uniform(-((U_fricc / k) * log(z_e/z_0)), (U_fricc / k) * log(z_e/z_0))
+        V_wz = random.uniform(-5, 5)  
+        V_wind = [V_wx, V_wy, V_wz]
+                             
+    else:
+        V_wx = 0
+        V_wy = 0
+        V_wz = 0
+        V_wind = [V_wx, V_wy, V_wz]
 
+  
 ######## Caracterización de la valvula de escape ########
     C1 = 0.6
     D_val = 0.2                    #[m]
@@ -168,44 +181,62 @@ sol1 = solve_ivp( fun= f3D, t_span=(t_0,t_f), y0=y_01, t_eval=t_Interval)
 ############################## Representación de resultados #####################################
 
 plt.subplot(2,3,1)
-plt.plot(sol1.t,sol1.y[2],'b',)
-plt.xlabel('time [s]')
-plt.ylabel('altitud [m]')
+plt.plot(sol1.t /3600,sol1.y[2] /1000,'b',)
+plt.xlabel('time [Horas]')
+plt.ylabel('altitud [Km]')
 plt.grid()
 
 plt.subplot(2,3,2)
-plt.plot(sol1.y[2],sol1.y[5],'b',)
-plt.xlabel('altitud [m]')
+plt.plot(sol1.y[2] /1000,sol1.y[5],'b',)
+plt.xlabel('altitud [Km]')
 plt.ylabel('velocity [m/s]')
 plt.grid()
 
 plt.subplot(2,3,3)
-plt.plot(sol1.t,sol1.y[5],'b',)
-plt.xlabel('time [s]')
+plt.plot(sol1.t /3600,sol1.y[5],'b',)
+plt.xlabel('time [Horas]')
 plt.ylabel('velocity [m/s]')
 plt.grid()
 
 plt.subplot(2,3,4)
-plt.plot(sol1.t,sol1.y[6],'b',)
-plt.xlabel('time [s]')
+plt.plot(sol1.t /3600,sol1.y[6],'b',)
+plt.xlabel('time [Horas]')
 plt.ylabel('masa_sistema [Kg]')
 plt.grid()
 
 plt.subplot(2,3,5)
-plt.plot(sol1.t,sol1.y[0],'b',)
-plt.xlabel('time [s]')
+plt.plot(sol1.t /3600,sol1.y[0],'b',)
+plt.xlabel('time [Horas]')
 plt.ylabel(' X [m]')
 plt.grid()
 
 plt.subplot(2,3,6)
-plt.plot(sol1.t,sol1.y[1],'b',)
-plt.xlabel('time [s]')
+plt.plot(sol1.t /3600,sol1.y[1],'b',)
+plt.xlabel('time [Horas]')
 plt.ylabel(' Y [m]')
 plt.grid()
 
 plt.show()
 
+plt.subplot(1,3,1)
+plt.plot(sol1.y[0],sol1.y[2] /1000,'b',)
+plt.xlabel('X [m]')
+plt.ylabel(' Z [Km]')
+plt.grid()
 
+plt.subplot(1,3,2)
+plt.plot(sol1.y[1],sol1.y[2] /1000,'b',)
+plt.xlabel('Y [m]')
+plt.ylabel(' Z [Km]')
+plt.grid()
+
+plt.subplot(1,3,3)
+plt.plot(sol1.y[0],sol1.y[1],'b',)
+plt.xlabel('X [m]')
+plt.ylabel(' Y [m]')
+plt.grid()
+
+plt.show()
 
 fig = plt.figure()
 
@@ -214,12 +245,12 @@ ax1 = fig.add_subplot(111,projection='3d')
 plt.title('Trayectoria del Globo')
 ax1.set_xlabel('x [m]')
 ax1.set_ylabel('y [m]')
-ax1.set_zlabel('z [m]')
+ax1.set_zlabel('z [Km]')
 
 # Datos en array bi-dimensional
 x = array([sol1.y[0]])
 y = array([sol1.y[1]])
-z = array([sol1.y[2]])
+z = array([sol1.y[2]/1000])
 
 # plot_wireframe nos permite agregar los datos x, y, z. Por ello 3D
 # Es necesario que los datos esten contenidos en un array bi-dimensional
@@ -227,4 +258,81 @@ ax1.plot_wireframe(x, y, z)
 
 
 # Mostramos el gráfico
+plt.show()
+
+#############################   Pandas   #####################
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+import matplotlib.transforms as transforms
+
+def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
+    """
+    Create a plot of the covariance confidence ellipse of *x* and *y*.
+
+    Parameters
+    ----------
+    x, y : array-like, shape (n, )
+        Input data.
+
+    ax : matplotlib.axes.Axes
+        The axes object to draw the ellipse into.
+
+    n_std : float
+        The number of standard deviations to determine the ellipse's radiuses.
+
+    **kwargs
+        Forwarded to `~matplotlib.patches.Ellipse`
+
+    Returns
+    -------
+    matplotlib.patches.Ellipse
+    """
+    if x.size != y.size:
+        raise ValueError("x and y must be the same size")
+
+    cov = np.cov(x, y)
+    pearson = cov[0, 1]/np.sqrt(cov[0, 0] * cov[1, 1])
+    # Using a special case to obtain the eigenvalues of this
+    # two-dimensional dataset.
+    ell_radius_x = np.sqrt(1 + pearson)
+    ell_radius_y = np.sqrt(1 - pearson)
+    ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                      facecolor=facecolor, **kwargs)
+
+    # Calculating the standard deviation of x from
+    # the squareroot of the variance and multiplying
+    # with the given number of standard deviations.
+    scale_x = np.sqrt(cov[0, 0]) * n_std
+    mean_x = np.mean(x)
+
+    # calculating the standard deviation of y ...
+    scale_y = np.sqrt(cov[1, 1]) * n_std
+    mean_y = np.mean(y)
+
+    transf = transforms.Affine2D() \
+        .rotate_deg(45) \
+        .scale(scale_x, scale_y) \
+        .translate(mean_x, mean_y)
+
+    ellipse.set_transform(transf + ax.transData)
+    return ax.add_patch(ellipse)
+
+fig, ax_nstd = plt.subplots(figsize=(6, 6))
+
+ax_nstd.axvline(c='grey', lw=1)
+ax_nstd.axhline(c='grey', lw=1)
+
+############### X e Y ####################
+ax_nstd.scatter(sol1.y[0], sol1.y[1])
+
+confidence_ellipse(sol1.y[0], sol1.y[1], ax_nstd, n_std=1, label=r'$1\sigma$', edgecolor='firebrick')
+confidence_ellipse(sol1.y[0], sol1.y[1], ax_nstd, n_std=2, label=r'$2\sigma$', edgecolor='fuchsia', linestyle='--')
+confidence_ellipse(sol1.y[0], sol1.y[1], ax_nstd, n_std=3, label=r'$3\sigma$', edgecolor='blue', linestyle=':')
+
+ax_nstd.set_title('Elipse de Error')
+ax_nstd.legend()
+plt.xlabel('X [m]')
+plt.ylabel('Y [m]')
+
 plt.show()
